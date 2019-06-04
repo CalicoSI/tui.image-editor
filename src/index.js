@@ -16,6 +16,7 @@ import './js/command/changeTextStyle';
 import './js/command/clearObjects';
 import './js/command/flip';
 import './js/command/loadImage';
+import './js/command/loadJson';
 import './js/command/removeFilter';
 import './js/command/removeObject';
 import './js/command/resizeCanvasDimension';

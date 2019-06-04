@@ -28,6 +28,15 @@ class FreeDrawing extends Component {
          * @type {fabric.Color}
          */
         this.oColor = new fabric.Color('rgba(0, 0, 0, 0.5)');
+
+        this.isPencilMode = false;
+
+        this._listeners = {
+            mousedown: this._onFabricMouseDown.bind(this),
+            mouseover: this._onFabricMouseOver.bind(this),
+            mouseout: this._onFabricMouseOut.bind(this),
+            mouseup: this._onFabricMouseUp.bind(this)
+        };
     }
 
     /**
@@ -37,8 +46,27 @@ class FreeDrawing extends Component {
     start(setting) {
         const canvas = this.getCanvas();
 
-        canvas.isDrawingMode = true;
         this.setBrush(setting);
+        this.isPencilMode = (this.oColor.getAlpha() > 0);
+        if (this.isPencilMode) {
+            canvas.isDrawingMode = true;
+        } else {
+            canvas.defaultCursor = 'crosshair';
+            canvas.hoverCursor = 'crosshair';
+            canvas.selection = false;
+            canvas.forEachObject(obj => {
+                obj.set({
+                    // evented: false,
+                    perPixelTargetFind: true,
+                    selectable: false,
+                    hasControls: false,
+                    hasBorders: false
+                });
+            });
+            canvas.on({
+                'mouse:down': this._listeners.mousedown
+            });
+        }
     }
 
     /**
@@ -62,8 +90,63 @@ class FreeDrawing extends Component {
      */
     end() {
         const canvas = this.getCanvas();
+        if (this.isPencilMode) {
+            canvas.isDrawingMode = false;
+        } else {
+            canvas.defaultCursor = 'default';
+            canvas.selection = true;
+            // canvas.forEachObject(obj => {
+            //     obj.set({
+            //         evented: true
+            //     });
+            // });
+            canvas.off('mouse:down', this._listeners.mousedown);
+        }
+    }
 
-        canvas.isDrawingMode = false;
+    /**
+     * Mousedown event handler in fabric canvas
+     * @param {{target: fabric.Object, e: MouseEvent}} fEvent - Fabric event object
+     * @private
+     */
+    _onFabricMouseDown(fEvent) {
+        const canvas = this.getCanvas();
+        if (fEvent.target) {
+            canvas.remove(fEvent.target);
+        }
+        canvas.on({
+            'mouse:up': this._listeners.mouseup,
+            'mouse:over': this._listeners.mouseover,
+            'mouse:out': this._listeners.mouseout
+        });
+    }
+
+    _onFabricMouseOver(fEvent) {
+        const canvas = this.getCanvas();
+        if (fEvent.target) {
+            canvas.remove(fEvent.target);
+        }
+    }
+
+    _onFabricMouseOut(fEvent) {
+        const canvas = this.getCanvas();
+        if (fEvent.target) {
+            canvas.remove(fEvent.target);
+        }
+    }
+
+    /**
+     * Mouseup event handler in fabric canvas
+     * @param {{target: fabric.Object, e: MouseEvent}} fEvent - Fabric event object
+     * @private
+     */
+    _onFabricMouseUp() {
+        const canvas = this.getCanvas();
+        canvas.off({
+            'mouse:up': this._listeners.mouseup,
+            'mouse:over': this._listeners.mouseover,
+            'mouse:out': this._listeners.mouseout
+        });
     }
 }
 

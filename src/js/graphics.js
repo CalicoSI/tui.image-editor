@@ -404,6 +404,23 @@ class Graphics {
     }
 
     /**
+     * Get JSON string
+     * @param {Array} propertiesToInclude - options for toJSON
+     * @returns {string} A JSONString containing canvas data
+     */
+    toJSON(propertiesToInclude) {
+        const canvas = this._canvas;
+        // convert the canvas to a data url and download it.
+        const bgImage = canvas.backgroundImage;
+        canvas.backgroundImage = null;
+        canvas.renderAll();
+        const json = canvas.toJSON(propertiesToInclude);
+        canvas.setBackgroundImage(bgImage, canvas.renderAll.bind(canvas));
+
+        return json;
+    }
+
+    /**
      * Save image(background) of canvas
      * @param {string} name - Name of image
      * @param {?fabric.Image} canvasImage - Fabric image instance
@@ -431,13 +448,15 @@ class Graphics {
     adjustCanvasDimension() {
         const canvasImage = this.canvasImage.scale(1);
         const {width, height} = canvasImage.getBoundingRect();
-        const maxDimension = this._calcMaxDimension(width, height);
+        // const maxDimension = this._calcMaxDimension(width, height);
 
         this.setCanvasCssDimension({
             width: '100%',
             height: '100%', // Set height '' for IE9
-            'max-width': `${maxDimension.width}px`,
-            'max-height': `${maxDimension.height}px`
+            // 'max-width': `${maxDimension.width}px`,
+            // 'max-height': `${maxDimension.height}px`
+            'max-width': `200%`,
+            'max-height': `200%`
         });
 
         this.setCanvasBackstoreDimension({

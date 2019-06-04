@@ -262,6 +262,7 @@ declare namespace tuiImageEditor {
         public hasFilter(type: string): boolean;
         public isEmptyRedoStack(): boolean;
         public isEmptyUndoStack(): boolean;
+        public loadFromJSON(json: string): Promise<void>;
         public loadImageFromFile(imgFile: File, imageName?: string): Promise<ICropResolveObject>;
         public loadImageFromURL(url: string, imageName?: string): Promise<ICropResolveObject>;
         public redo(): Promise<any>;
@@ -269,6 +270,7 @@ declare namespace tuiImageEditor {
         public removeActiveObject(): void;
         public removeFilter(type?: string): Promise<IFilterResolveObject>;
         public removeObject(id: number): Promise<void>;
+        public renderAll(): void;
         public resetFlip(): Promise<IFlipXYResolveObject>;
         public resizeCanvasDimension(dimension: ICanvasSize): Promise<void>;
         public rotate(angle: AngleType): Promise<AngleType>;
@@ -282,6 +284,7 @@ declare namespace tuiImageEditor {
         public startDrawingMode(mode: string, option?: {width?: number, color?: string}): boolean;
         public stopDrawingMode(): void;
         public toDataURL(options?: IToDataURLOptions): string;
+        public toJSON(propertiesToInclude?: any): string;
         public undo(): Promise<any>;
         public on(eventName: string, handler: (...args: any[]) => void): void;
     }

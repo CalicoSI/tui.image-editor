@@ -29,6 +29,7 @@ module.exports = {
     commandNames: {
         'CLEAR_OBJECTS': 'clearObjects',
         'LOAD_IMAGE': 'loadImage',
+        'LOAD_JSON': 'loadJson',
         'FLIP_IMAGE': 'flip',
         'ROTATE_IMAGE': 'rotate',
         'ADD_OBJECT': 'addObject',

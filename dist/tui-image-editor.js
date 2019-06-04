@@ -108,11 +108,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	__webpack_require__(151);
 
+	__webpack_require__(152);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	module.exports = _imageEditor2.default;
-
 	// commands
+	module.exports = _imageEditor2.default;
 
 /***/ }),
 /* 1 */
@@ -1183,6 +1184,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 
 	        /**
+	         * Render all objects
+	         * @example
+	         * imageEditor.deactivateAll();
+	         */
+
+	    }, {
+	        key: 'renderAll',
+	        value: function renderAll() {
+	            this._graphics.renderAll();
+	        }
+
+	        /**
 	         * discard selction
 	         * @example
 	         * imageEditor.discardSelection();
@@ -1305,6 +1318,34 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 
 	            return this.execute(commands.LOAD_IMAGE, imageName, url);
+	        }
+
+	        /**
+	         * Load from JSON
+	         * @param {string} json - load canvas from fabcicjs json
+	         * @returns {Promise<SizeChange, ErrorMsg>}
+	         */
+
+	    }, {
+	        key: 'loadFromJSON',
+	        value: function loadFromJSON(json) {
+	            if (!json) {
+	                return _promise2.default.reject(rejectMessages.invalidParameters);
+	            }
+
+	            return this.execute(commands.LOAD_JSON, json);
+	        }
+
+	        /**
+	         * Get JSON string
+	         * @param {Array} propertiesToInclude - options for toJSON
+	         * @returns {string} A JSONString containing canvas data
+	         */
+
+	    }, {
+	        key: 'toJSON',
+	        value: function toJSON(propertiesToInclude) {
+	            return this._graphics.toJSON(propertiesToInclude);
 	        }
 
 	        /**
@@ -4687,6 +4728,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    commandNames: {
 	        'CLEAR_OBJECTS': 'clearObjects',
 	        'LOAD_IMAGE': 'loadImage',
+	        'LOAD_JSON': 'loadJson',
 	        'FLIP_IMAGE': 'flip',
 	        'ROTATE_IMAGE': 'rotate',
 	        'ADD_OBJECT': 'addObject',
@@ -11197,6 +11239,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 
 	        /**
+	         * Get JSON string
+	         * @param {Array} propertiesToInclude - options for toJSON
+	         * @returns {string} A JSONString containing canvas data
+	         */
+
+	    }, {
+	        key: 'toJSON',
+	        value: function toJSON(propertiesToInclude) {
+	            var canvas = this._canvas;
+	            // convert the canvas to a data url and download it.
+	            var bgImage = canvas.backgroundImage;
+	            canvas.backgroundImage = null;
+	            canvas.renderAll();
+	            var json = canvas.toJSON(propertiesToInclude);
+	            canvas.setBackgroundImage(bgImage, canvas.renderAll.bind(canvas));
+
+	            return json;
+	        }
+
+	        /**
 	         * Save image(background) of canvas
 	         * @param {string} name - Name of image
 	         * @param {?fabric.Image} canvasImage - Fabric image instance
@@ -11236,14 +11298,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var _canvasImage$getBound = canvasImage.getBoundingRect(),
 	                width = _canvasImage$getBound.width,
 	                height = _canvasImage$getBound.height;
-
-	            var maxDimension = this._calcMaxDimension(width, height);
+	            // const maxDimension = this._calcMaxDimension(width, height);
 
 	            this.setCanvasCssDimension({
 	                width: '100%',
 	                height: '100%', // Set height '' for IE9
-	                'max-width': maxDimension.width + 'px',
-	                'max-height': maxDimension.height + 'px'
+	                // 'max-width': `${maxDimension.width}px`,
+	                // 'max-height': `${maxDimension.height}px`
+	                'max-width': '200%',
+	                'max-height': '200%'
 	            });
 
 	            this.setCanvasBackstoreDimension({
@@ -13688,75 +13751,166 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @ignore
 	 */
 	var FreeDrawing = function (_Component) {
-	  _inherits(FreeDrawing, _Component);
+	    _inherits(FreeDrawing, _Component);
 
-	  function FreeDrawing(graphics) {
-	    _classCallCheck(this, FreeDrawing);
+	    function FreeDrawing(graphics) {
+	        _classCallCheck(this, FreeDrawing);
 
-	    /**
-	     * Brush width
-	     * @type {number}
-	     */
-	    var _this = _possibleConstructorReturn(this, (FreeDrawing.__proto__ || Object.getPrototypeOf(FreeDrawing)).call(this, _consts2.default.componentNames.FREE_DRAWING, graphics));
+	        /**
+	         * Brush width
+	         * @type {number}
+	         */
+	        var _this = _possibleConstructorReturn(this, (FreeDrawing.__proto__ || Object.getPrototypeOf(FreeDrawing)).call(this, _consts2.default.componentNames.FREE_DRAWING, graphics));
 
-	    _this.width = 12;
+	        _this.width = 12;
 
-	    /**
-	     * fabric.Color instance for brush color
-	     * @type {fabric.Color}
-	     */
-	    _this.oColor = new _fabric2.default.Color('rgba(0, 0, 0, 0.5)');
-	    return _this;
-	  }
+	        /**
+	         * fabric.Color instance for brush color
+	         * @type {fabric.Color}
+	         */
+	        _this.oColor = new _fabric2.default.Color('rgba(0, 0, 0, 0.5)');
 
-	  /**
-	   * Start free drawing mode
-	   * @param {{width: ?number, color: ?string}} [setting] - Brush width & color
-	   */
+	        _this.isPencilMode = false;
 
-
-	  _createClass(FreeDrawing, [{
-	    key: 'start',
-	    value: function start(setting) {
-	      var canvas = this.getCanvas();
-
-	      canvas.isDrawingMode = true;
-	      this.setBrush(setting);
+	        _this._listeners = {
+	            mousedown: _this._onFabricMouseDown.bind(_this),
+	            mouseover: _this._onFabricMouseOver.bind(_this),
+	            mouseout: _this._onFabricMouseOut.bind(_this),
+	            mouseup: _this._onFabricMouseUp.bind(_this)
+	        };
+	        return _this;
 	    }
 
 	    /**
-	     * Set brush
+	     * Start free drawing mode
 	     * @param {{width: ?number, color: ?string}} [setting] - Brush width & color
 	     */
 
-	  }, {
-	    key: 'setBrush',
-	    value: function setBrush(setting) {
-	      var brush = this.getCanvas().freeDrawingBrush;
 
-	      setting = setting || {};
-	      this.width = setting.width || this.width;
-	      if (setting.color) {
-	        this.oColor = new _fabric2.default.Color(setting.color);
-	      }
-	      brush.width = this.width;
-	      brush.color = this.oColor.toRgba();
-	    }
+	    _createClass(FreeDrawing, [{
+	        key: 'start',
+	        value: function start(setting) {
+	            var canvas = this.getCanvas();
 
-	    /**
-	     * End free drawing mode
-	     */
+	            this.setBrush(setting);
+	            this.isPencilMode = this.oColor.getAlpha() > 0;
+	            if (this.isPencilMode) {
+	                canvas.isDrawingMode = true;
+	            } else {
+	                canvas.defaultCursor = 'crosshair';
+	                canvas.hoverCursor = 'crosshair';
+	                canvas.selection = false;
+	                canvas.forEachObject(function (obj) {
+	                    obj.set({
+	                        // evented: false,
+	                        perPixelTargetFind: true,
+	                        selectable: false,
+	                        hasControls: false,
+	                        hasBorders: false
+	                    });
+	                });
+	                canvas.on({
+	                    'mouse:down': this._listeners.mousedown
+	                });
+	            }
+	        }
 
-	  }, {
-	    key: 'end',
-	    value: function end() {
-	      var canvas = this.getCanvas();
+	        /**
+	         * Set brush
+	         * @param {{width: ?number, color: ?string}} [setting] - Brush width & color
+	         */
 
-	      canvas.isDrawingMode = false;
-	    }
-	  }]);
+	    }, {
+	        key: 'setBrush',
+	        value: function setBrush(setting) {
+	            var brush = this.getCanvas().freeDrawingBrush;
 
-	  return FreeDrawing;
+	            setting = setting || {};
+	            this.width = setting.width || this.width;
+	            if (setting.color) {
+	                this.oColor = new _fabric2.default.Color(setting.color);
+	            }
+	            brush.width = this.width;
+	            brush.color = this.oColor.toRgba();
+	        }
+
+	        /**
+	         * End free drawing mode
+	         */
+
+	    }, {
+	        key: 'end',
+	        value: function end() {
+	            var canvas = this.getCanvas();
+	            if (this.isPencilMode) {
+	                canvas.isDrawingMode = false;
+	            } else {
+	                canvas.defaultCursor = 'default';
+	                canvas.selection = true;
+	                // canvas.forEachObject(obj => {
+	                //     obj.set({
+	                //         evented: true
+	                //     });
+	                // });
+	                canvas.off('mouse:down', this._listeners.mousedown);
+	            }
+	        }
+
+	        /**
+	         * Mousedown event handler in fabric canvas
+	         * @param {{target: fabric.Object, e: MouseEvent}} fEvent - Fabric event object
+	         * @private
+	         */
+
+	    }, {
+	        key: '_onFabricMouseDown',
+	        value: function _onFabricMouseDown(fEvent) {
+	            var canvas = this.getCanvas();
+	            if (fEvent.target) {
+	                canvas.remove(fEvent.target);
+	            }
+	            canvas.on({
+	                'mouse:up': this._listeners.mouseup,
+	                'mouse:over': this._listeners.mouseover,
+	                'mouse:out': this._listeners.mouseout
+	            });
+	        }
+	    }, {
+	        key: '_onFabricMouseOver',
+	        value: function _onFabricMouseOver(fEvent) {
+	            var canvas = this.getCanvas();
+	            if (fEvent.target) {
+	                canvas.remove(fEvent.target);
+	            }
+	        }
+	    }, {
+	        key: '_onFabricMouseOut',
+	        value: function _onFabricMouseOut(fEvent) {
+	            var canvas = this.getCanvas();
+	            if (fEvent.target) {
+	                canvas.remove(fEvent.target);
+	            }
+	        }
+
+	        /**
+	         * Mouseup event handler in fabric canvas
+	         * @param {{target: fabric.Object, e: MouseEvent}} fEvent - Fabric event object
+	         * @private
+	         */
+
+	    }, {
+	        key: '_onFabricMouseUp',
+	        value: function _onFabricMouseUp() {
+	            var canvas = this.getCanvas();
+	            canvas.off({
+	                'mouse:up': this._listeners.mouseup,
+	                'mouse:over': this._listeners.mouseover,
+	                'mouse:out': this._listeners.mouseout
+	            });
+	        }
+	    }]);
+
+	    return FreeDrawing;
 	}(_component2.default);
 
 	module.exports = FreeDrawing;
@@ -17929,6 +18083,71 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _consts2 = _interopRequireDefault(_consts);
 
+	var _promise = __webpack_require__(4);
+
+	var _promise2 = _interopRequireDefault(_promise);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	var commandNames = _consts2.default.commandNames; /**
+	                                                   * @author NHN Ent. FE Development Team <dl_javascript@nhnent.com>
+	                                                   * @fileoverview Load a background (main) image
+	                                                   */
+
+	var command = {
+	    name: commandNames.LOAD_JSON,
+
+	    /**
+	     * Load a objects from json
+	     * @param {Graphics} graphics - Graphics instance
+	     * @param {string} json - Canvas json
+	     * @returns {Promise}
+	     */
+	    execute: function execute(graphics, json) {
+	        var _this = this;
+
+	        return new _promise2.default(function (resolve) {
+	            var canvas = graphics.getCanvas();
+	            _this.undoData.objects = graphics.removeAll();
+
+	            canvas.loadFromJSON(json, function () {
+	                canvas.renderAll.bind(canvas);
+	                canvas.renderAll();
+	                resolve();
+	            });
+	        });
+	    },
+
+
+	    /**
+	     * @param {Graphics} graphics - Graphics instance
+	     * @returns {Promise}
+	     */
+	    undo: function undo(graphics) {
+	        graphics.add(this.undoData.objects);
+
+	        return _promise2.default.resolve();
+	    }
+	};
+
+	_command2.default.register(command);
+
+	module.exports = command;
+
+/***/ }),
+/* 147 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var _command = __webpack_require__(69);
+
+	var _command2 = _interopRequireDefault(_command);
+
+	var _consts = __webpack_require__(73);
+
+	var _consts2 = _interopRequireDefault(_consts);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	/**
@@ -17976,7 +18195,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = command;
 
 /***/ }),
-/* 147 */
+/* 148 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -18039,7 +18258,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = command;
 
 /***/ }),
-/* 148 */
+/* 149 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -18104,7 +18323,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = command;
 
 /***/ }),
-/* 149 */
+/* 150 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -18164,7 +18383,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = command;
 
 /***/ }),
-/* 150 */
+/* 151 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -18251,7 +18470,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = command;
 
 /***/ }),
-/* 151 */
+/* 152 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';

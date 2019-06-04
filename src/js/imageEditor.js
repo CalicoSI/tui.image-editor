@@ -507,6 +507,15 @@ class ImageEditor {
     }
 
     /**
+     * Render all objects
+     * @example
+     * imageEditor.renderAll();
+     */
+    renderAll() {
+        this._graphics.renderAll();
+    }
+
+    /**
      * discard selction
      * @example
      * imageEditor.discardSelection();
@@ -602,6 +611,28 @@ class ImageEditor {
         }
 
         return this.execute(commands.LOAD_IMAGE, imageName, url);
+    }
+
+    /**
+     * Load from JSON
+     * @param {string} json - load canvas from fabcicjs json
+     * @returns {Promise<SizeChange, ErrorMsg>}
+     */
+    loadFromJSON(json) {
+        if (!json) {
+            return Promise.reject(rejectMessages.invalidParameters);
+        }
+
+        return this.execute(commands.LOAD_JSON, json);
+    }
+
+    /**
+     * Get JSON string
+     * @param {Array} propertiesToInclude - options for toJSON
+     * @returns {string} A JSONString containing canvas data
+     */
+    toJSON(propertiesToInclude) {
+        return this._graphics.toJSON(propertiesToInclude);
     }
 
     /**
