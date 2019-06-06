@@ -1186,7 +1186,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        /**
 	         * Render all objects
 	         * @example
-	         * imageEditor.deactivateAll();
+	         * imageEditor.renderAll();
 	         */
 
 	    }, {
@@ -2207,6 +2207,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 
 	            return this.execute(commands.RESIZE_CANVAS_DIMENSION, dimension);
+	        }
+	    }, {
+	        key: 'setBackStoreDimension',
+	        value: function setBackStoreDimension(dimension) {
+	            return this._graphics.setCanvasBackstoreDimension(dimension);
 	        }
 
 	        /**

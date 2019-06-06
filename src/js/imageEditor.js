@@ -1361,6 +1361,10 @@ class ImageEditor {
         return this.execute(commands.RESIZE_CANVAS_DIMENSION, dimension);
     }
 
+    setBackStoreDimension(dimension) {
+        return this._graphics.setCanvasBackstoreDimension(dimension);
+    }
+
     /**
      * Destroy
      */
