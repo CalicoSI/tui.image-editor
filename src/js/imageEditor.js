@@ -626,6 +626,10 @@ class ImageEditor {
         return this.execute(commands.LOAD_JSON, json);
     }
 
+    deleteBackGroundImage() {
+        this._graphics.deleteBackGroundImage();
+    }
+
     /**
      * Get JSON string
      * @param {Array} propertiesToInclude - options for toJSON

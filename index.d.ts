@@ -249,6 +249,7 @@ declare namespace tuiImageEditor {
         public clearUndoStack(): void;
         public crop(rect: IRectConfig): Promise<ICropResolveObject>;
         public deactivateAll(): void;
+        public deleteBackGroundImage(): void;
         public destroy(): void;
         public discardSelection(): void;
         public flipX(): Promise<IFlipXYResolveObject>;

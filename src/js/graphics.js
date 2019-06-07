@@ -410,14 +410,15 @@ class Graphics {
      */
     toJSON(propertiesToInclude) {
         const canvas = this._canvas;
-        // convert the canvas to a data url and download it.
-        const bgImage = canvas.backgroundImage;
-        canvas.backgroundImage = null;
-        canvas.renderAll();
         const json = canvas.toJSON(propertiesToInclude);
-        canvas.setBackgroundImage(bgImage, canvas.renderAll.bind(canvas));
 
         return json;
+    }
+
+    deleteBackGroundImage() {
+        const canvas = this._canvas;
+        canvas.backgroundImage = null;
+        canvas.renderAll();
     }
 
     /**

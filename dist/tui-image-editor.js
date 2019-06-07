@@ -1335,6 +1335,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	            return this.execute(commands.LOAD_JSON, json);
 	        }
+	    }, {
+	        key: 'deleteBackGroundImage',
+	        value: function deleteBackGroundImage() {
+	            this._graphics.deleteBackGroundImage();
+	        }
 
 	        /**
 	         * Get JSON string
@@ -11253,14 +11258,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	        key: 'toJSON',
 	        value: function toJSON(propertiesToInclude) {
 	            var canvas = this._canvas;
-	            // convert the canvas to a data url and download it.
-	            var bgImage = canvas.backgroundImage;
-	            canvas.backgroundImage = null;
-	            canvas.renderAll();
 	            var json = canvas.toJSON(propertiesToInclude);
-	            canvas.setBackgroundImage(bgImage, canvas.renderAll.bind(canvas));
 
 	            return json;
+	        }
+	    }, {
+	        key: 'deleteBackGroundImage',
+	        value: function deleteBackGroundImage() {
+	            var canvas = this._canvas;
+	            canvas.backgroundImage = null;
+	            canvas.renderAll();
 	        }
 
 	        /**
