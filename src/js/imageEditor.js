@@ -123,6 +123,7 @@ class ImageEditor {
             objectActivated: this._onObjectActivated.bind(this),
             objectMoved: this._onObjectMoved.bind(this),
             objectScaled: this._onObjectScaled.bind(this),
+            objectChanged: this._onObjectChanged.bind(this),
             createdPath: this._onCreatedPath,
             addText: this._onAddText.bind(this),
             addObject: this._onAddObject.bind(this),
@@ -273,6 +274,7 @@ class ImageEditor {
             'mousedown': this._handlers.mousedown,
             'objectMoved': this._handlers.objectMoved,
             'objectScaled': this._handlers.objectScaled,
+            'objectChanged': this._handlers.objectChanged,
             'objectActivated': this._handlers.objectActivated,
             'addText': this._handlers.addText,
             'addObject': this._handlers.addObject,
@@ -464,6 +466,10 @@ class ImageEditor {
          * });
          */
         this.fire(events.OBJECT_SCALED, props);
+    }
+
+    _onObjectChanged(props) {
+        this.fire(events.OBJECT_CHANGED, props);
     }
 
     /**

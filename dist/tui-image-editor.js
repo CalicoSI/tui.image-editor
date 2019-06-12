@@ -747,6 +747,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            objectActivated: this._onObjectActivated.bind(this),
 	            objectMoved: this._onObjectMoved.bind(this),
 	            objectScaled: this._onObjectScaled.bind(this),
+	            objectChanged: this._onObjectChanged.bind(this),
 	            createdPath: this._onCreatedPath,
 	            addText: this._onAddText.bind(this),
 	            addObject: this._onAddObject.bind(this),
@@ -909,6 +910,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                'mousedown': this._handlers.mousedown,
 	                'objectMoved': this._handlers.objectMoved,
 	                'objectScaled': this._handlers.objectScaled,
+	                'objectChanged': this._handlers.objectChanged,
 	                'objectActivated': this._handlers.objectActivated,
 	                'addText': this._handlers.addText,
 	                'addObject': this._handlers.addObject,
@@ -1132,6 +1134,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	             * });
 	             */
 	            this.fire(events.OBJECT_SCALED, props);
+	        }
+	    }, {
+	        key: '_onObjectChanged',
+	        value: function _onObjectChanged(props) {
+	            this.fire(events.OBJECT_CHANGED, props);
 	        }
 
 	        /**
@@ -4767,6 +4774,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        OBJECT_MOVED: 'objectMoved',
 	        OBJECT_SCALED: 'objectScaled',
 	        OBJECT_CREATED: 'objectCreated',
+	        OBJECT_CHANGED: 'objectChanged',
 	        TEXT_EDITING: 'textEditing',
 	        TEXT_CHANGED: 'textChanged',
 	        ICON_CREATE_RESIZE: 'iconCreateResize',
@@ -13755,6 +13763,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                */
 
 
+	var events = _consts2.default.eventNames;
+
 	/**
 	 * FreeDrawing
 	 * @class FreeDrawing
@@ -13762,6 +13772,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @extends {Component}
 	 * @ignore
 	 */
+
 	var FreeDrawing = function (_Component) {
 	    _inherits(FreeDrawing, _Component);
 
@@ -13788,7 +13799,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	            mousedown: _this._onFabricMouseDown.bind(_this),
 	            mouseover: _this._onFabricMouseOver.bind(_this),
 	            mouseout: _this._onFabricMouseOut.bind(_this),
-	            mouseup: _this._onFabricMouseUp.bind(_this)
+	            mouseup: _this._onFabricMouseUp.bind(_this),
+	            objectchanged: _this._onFabricObjectAddedModifiedRemoved.bind(_this)
 	        };
 	        return _this;
 	    }
@@ -13825,6 +13837,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    'mouse:down': this._listeners.mousedown
 	                });
 	            }
+	            canvas.on({
+	                'object:added': this._listeners.objectchanged,
+	                'object:modified': this._listeners.objectchanged,
+	                'object:removed': this._listeners.objectchanged
+	            });
 	        }
 
 	        /**
@@ -13859,13 +13876,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	            } else {
 	                canvas.defaultCursor = 'default';
 	                canvas.selection = true;
-	                // canvas.forEachObject(obj => {
-	                //     obj.set({
-	                //         evented: true
-	                //     });
-	                // });
 	                canvas.off('mouse:down', this._listeners.mousedown);
 	            }
+	            canvas.off({
+	                'object:added': this._listeners.canvashanged,
+	                'object:modified': this._listeners.canvashanged,
+	                'object:removed': this._listeners.canvashanged
+	            });
 	        }
 
 	        /**
@@ -13902,6 +13919,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	            if (fEvent.target) {
 	                canvas.remove(fEvent.target);
 	            }
+	        }
+	    }, {
+	        key: '_onFabricObjectAddedModifiedRemoved',
+	        value: function _onFabricObjectAddedModifiedRemoved() {
+	            this.graphics.fire(events.OBJECT_CHANGED, null);
 	        }
 
 	        /**

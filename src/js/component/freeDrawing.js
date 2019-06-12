@@ -5,6 +5,7 @@
 import fabric from 'fabric/dist/fabric.require';
 import Component from '../interface/component';
 import consts from '../consts';
+const events = consts.eventNames;
 
 /**
  * FreeDrawing
@@ -35,7 +36,8 @@ class FreeDrawing extends Component {
             mousedown: this._onFabricMouseDown.bind(this),
             mouseover: this._onFabricMouseOver.bind(this),
             mouseout: this._onFabricMouseOut.bind(this),
-            mouseup: this._onFabricMouseUp.bind(this)
+            mouseup: this._onFabricMouseUp.bind(this),
+            objectchanged: this._onFabricObjectAddedModifiedRemoved.bind(this)
         };
     }
 
@@ -67,6 +69,11 @@ class FreeDrawing extends Component {
                 'mouse:down': this._listeners.mousedown
             });
         }
+        canvas.on({
+            'object:added': this._listeners.objectchanged,
+            'object:modified': this._listeners.objectchanged,
+            'object:removed': this._listeners.objectchanged
+        });
     }
 
     /**
@@ -95,13 +102,13 @@ class FreeDrawing extends Component {
         } else {
             canvas.defaultCursor = 'default';
             canvas.selection = true;
-            // canvas.forEachObject(obj => {
-            //     obj.set({
-            //         evented: true
-            //     });
-            // });
             canvas.off('mouse:down', this._listeners.mousedown);
         }
+        canvas.off({
+            'object:added': this._listeners.canvashanged,
+            'object:modified': this._listeners.canvashanged,
+            'object:removed': this._listeners.canvashanged
+        });
     }
 
     /**
@@ -133,6 +140,10 @@ class FreeDrawing extends Component {
         if (fEvent.target) {
             canvas.remove(fEvent.target);
         }
+    }
+
+    _onFabricObjectAddedModifiedRemoved() {
+        this.graphics.fire(events.OBJECT_CHANGED, null);
     }
 
     /**
