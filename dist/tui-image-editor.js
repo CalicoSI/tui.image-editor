@@ -13795,12 +13795,21 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	        _this.isPencilMode = false;
 
+	        _this.isEraseMode = false;
+
+	        _this.pointerArray = [];
+	        _this.pointerSearchIndex = 0;
+
 	        _this._listeners = {
 	            mousedown: _this._onFabricMouseDown.bind(_this),
-	            mouseover: _this._onFabricMouseOver.bind(_this),
-	            mouseout: _this._onFabricMouseOut.bind(_this),
+	            mousemove: _this._onFabricMouseMove.bind(_this),
 	            mouseup: _this._onFabricMouseUp.bind(_this),
 	            objectchanged: _this._onFabricObjectAddedModifiedRemoved.bind(_this)
+	        };
+
+	        _this._local = {
+	            isTransparent: _this._isTransparent.bind(_this),
+	            startEraserMode: _this._startEraserMode.bind(_this)
 	        };
 	        return _this;
 	    }
@@ -13818,6 +13827,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	            this.setBrush(setting);
 	            this.isPencilMode = this.oColor.getAlpha() > 0;
+	            canvas.on({
+	                'mouse:down': this._listeners.mousedown
+	            });
 	            if (this.isPencilMode) {
 	                canvas.isDrawingMode = true;
 	            } else {
@@ -13826,15 +13838,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	                canvas.selection = false;
 	                canvas.forEachObject(function (obj) {
 	                    obj.set({
-	                        // evented: false,
-	                        perPixelTargetFind: true,
+	                        evented: false,
+	                        perPixelTargetFind: false,
 	                        selectable: false,
 	                        hasControls: false,
 	                        hasBorders: false
 	                    });
-	                });
-	                canvas.on({
-	                    'mouse:down': this._listeners.mousedown
 	                });
 	            }
 	            canvas.on({
@@ -13871,59 +13880,134 @@ return /******/ (function(modules) { // webpackBootstrap
 	        key: 'end',
 	        value: function end() {
 	            var canvas = this.getCanvas();
+	            canvas.off('mouse:down', this._listeners.mousedown);
 	            if (this.isPencilMode) {
 	                canvas.isDrawingMode = false;
 	            } else {
 	                canvas.defaultCursor = 'default';
 	                canvas.selection = true;
-	                canvas.off('mouse:down', this._listeners.mousedown);
 	            }
 	            canvas.off({
-	                'object:added': this._listeners.canvashanged,
-	                'object:modified': this._listeners.canvashanged,
-	                'object:removed': this._listeners.canvashanged
+	                'object:added': this._listeners.objectchanged,
+	                'object:modified': this._listeners.objectchanged,
+	                'object:removed': this._listeners.objectchanged
 	            });
 	        }
+	    }, {
+	        key: '_isTransparent',
+	        value: function _isTransparent(ctx, x, y, tolerance) {
+	            // If tolerance is > 0 adjust start coords to take into account.
+	            // If moves off Canvas fix to 0
+	            if (tolerance > 0) {
+	                if (x > tolerance) {
+	                    x -= tolerance;
+	                } else {
+	                    x = 0;
+	                }
+	                if (y > tolerance) {
+	                    y -= tolerance;
+	                } else {
+	                    y = 0;
+	                }
+	            }
 
-	        /**
-	         * Mousedown event handler in fabric canvas
-	         * @param {{target: fabric.Object, e: MouseEvent}} fEvent - Fabric event object
-	         * @private
-	         */
+	            var _isTransparent = true,
+	                i = void 0,
+	                temp = void 0,
+	                imageData = ctx.getImageData(x, y, tolerance * 2 || 1, tolerance * 2 || 1);
+	            var l = imageData.data.length;
 
+	            // Split image data - for tolerance > 1, pixelDataSize = 4;
+	            for (i = 3; i < l; i += 4) {
+	                temp = imageData.data[i];
+	                _isTransparent = temp <= 0;
+	                if (_isTransparent === false) {
+	                    break; // Stop if colour found
+	                }
+	            }
+
+	            imageData = null;
+
+	            return _isTransparent;
+	        }
+	    }, {
+	        key: '_startEraserMode',
+	        value: function _startEraserMode() {
+	            var _this2 = this;
+
+	            var arrayLen = this.pointerArray.length;
+	            if (!this.isEraseMode && this.pointerSearchIndex < arrayLen) {
+	                return;
+	            }
+	            var eraseTargets = [];
+	            var canvas = this.getCanvas();
+	            var context = canvas.getContext('2d');
+
+	            for (this.pointerSearchIndex; this.pointerSearchIndex < arrayLen; this.pointerSearchIndex += 1) {
+	                var pointEnd = new _fabric2.default.Point(this.pointerArray[this.pointerSearchIndex].x, this.pointerArray[this.pointerSearchIndex].y);
+	                var pointStart = pointEnd;
+	                if (this.pointerSearchIndex !== 0) {
+	                    pointStart = new _fabric2.default.Point(this.pointerArray[this.pointerSearchIndex - 1].x, this.pointerArray[this.pointerSearchIndex - 1].y);
+	                }
+	                var movedX = Math.abs(pointEnd.x - pointStart.x);
+	                var movedY = Math.abs(pointEnd.y - pointStart.y);
+	                var distanceFromPrevPoint = Math.sqrt(movedX * movedX + movedY * movedY);
+	                var directionX = pointEnd.x > pointStart.x ? -1 : 1;
+	                var directionY = pointEnd.y > pointStart.y ? -1 : 1;
+	                // canvasの座標が透明化を判定
+
+	                var _loop = function _loop(i) {
+	                    var checkX = pointEnd.x + (distanceFromPrevPoint ? i / distanceFromPrevPoint * movedX * directionX : 0);
+	                    var checkY = pointEnd.y + (distanceFromPrevPoint ? i / distanceFromPrevPoint * movedY * directionY : 0);
+	                    if (!_this2._local.isTransparent(context, checkX, checkY, 0)) {
+	                        canvas.forEachObject(function (obj) {
+	                            if (eraseTargets.indexOf(obj) < 0) {
+	                                if (!canvas.isTargetTransparent(obj, checkX, checkY)) {
+	                                    eraseTargets.push(obj);
+	                                }
+	                            }
+	                        });
+	                    }
+	                };
+
+	                for (var i = 0; i <= distanceFromPrevPoint; i += 3) {
+	                    _loop(i);
+	                }
+	            }
+	            if (eraseTargets.length) {
+	                canvas.remove.apply(canvas, eraseTargets);
+	            }
+	            setTimeout(this._local.startEraserMode, 50);
+	        }
 	    }, {
 	        key: '_onFabricMouseDown',
 	        value: function _onFabricMouseDown(fEvent) {
 	            var canvas = this.getCanvas();
-	            if (fEvent.target) {
-	                canvas.remove(fEvent.target);
+	            if (this.isPencilMode) {
+	                // prevent multitouch
+	            } else {
+	                this.isEraseMode = true;
+	                this.isEraseModeLastUpdate = false;
+	                var pointer = canvas.getPointer(fEvent.e);
+	                this.pointerArray = [];
+	                this.pointerSearchIndex = 0;
+	                this.pointerArray.push(pointer);
+	                this._startEraserMode();
+	                canvas.on({
+	                    'mouse:move': this._listeners.mousemove,
+	                    'mouse:up': this._listeners.mouseup
+	                });
 	            }
-	            canvas.on({
-	                'mouse:up': this._listeners.mouseup,
-	                'mouse:over': this._listeners.mouseover,
-	                'mouse:out': this._listeners.mouseout
-	            });
 	        }
 	    }, {
-	        key: '_onFabricMouseOver',
-	        value: function _onFabricMouseOver(fEvent) {
+	        key: '_onFabricMouseMove',
+	        value: function _onFabricMouseMove(fEvent) {
 	            var canvas = this.getCanvas();
-	            if (fEvent.target) {
-	                canvas.remove(fEvent.target);
+	            if (this.isPencilMode) {
+	                // do nothing
+	            } else {
+	                this.pointerArray.push(canvas.getPointer(fEvent.e));
 	            }
-	        }
-	    }, {
-	        key: '_onFabricMouseOut',
-	        value: function _onFabricMouseOut(fEvent) {
-	            var canvas = this.getCanvas();
-	            if (fEvent.target) {
-	                canvas.remove(fEvent.target);
-	            }
-	        }
-	    }, {
-	        key: '_onFabricObjectAddedModifiedRemoved',
-	        value: function _onFabricObjectAddedModifiedRemoved() {
-	            this.graphics.fire(events.OBJECT_CHANGED, null);
 	        }
 
 	        /**
@@ -13936,11 +14020,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	        key: '_onFabricMouseUp',
 	        value: function _onFabricMouseUp() {
 	            var canvas = this.getCanvas();
-	            canvas.off({
-	                'mouse:up': this._listeners.mouseup,
-	                'mouse:over': this._listeners.mouseover,
-	                'mouse:out': this._listeners.mouseout
-	            });
+	            if (this.isPencilMode) {
+	                //
+	            } else {
+	                this.isEraseMode = false;
+	                canvas.off({
+	                    'mouse:move': this._listeners.mousemove,
+	                    'mouse:up': this._listeners.mouseup
+	                });
+	            }
+	        }
+	    }, {
+	        key: '_onFabricObjectAddedModifiedRemoved',
+	        value: function _onFabricObjectAddedModifiedRemoved() {
+	            this.graphics.fire(events.OBJECT_CHANGED, null);
 	        }
 	    }]);
 
