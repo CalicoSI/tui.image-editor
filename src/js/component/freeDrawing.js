@@ -172,7 +172,7 @@ class FreeDrawing extends Component {
 
     _startEraserMode() {
         const arrayLen = this.pointerArray.length;
-        if (!this.isEraseMode && this.pointerSearchIndex < arrayLen) {
+        if (!this.isEraseMode && this.pointerSearchIndex >= arrayLen) {
             return;
         }
         const eraseTargets = [];
