@@ -14002,7 +14002,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	                // prevent multitouch
 	            } else {
 	                this.isEraseMode = true;
-	                this.isEraseModeLastUpdate = false;
 	                var pointer = canvas.getPointer(fEvent.e);
 	                this.pointerArray = [];
 	                this.pointerSearchIndex = 0;
@@ -14033,11 +14032,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    }, {
 	        key: '_onFabricMouseUp',
-	        value: function _onFabricMouseUp() {
+	        value: function _onFabricMouseUp(fEvent) {
 	            var canvas = this.getCanvas();
 	            if (this.isPencilMode) {
 	                //
 	            } else {
+	                this.pointerArray.push(canvas.getPointer(fEvent.e));
 	                this.isEraseMode = false;
 	                canvas.off({
 	                    'mouse:move': this._listeners.mousemove,

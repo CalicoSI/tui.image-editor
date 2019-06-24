@@ -221,7 +221,6 @@ class FreeDrawing extends Component {
             // prevent multitouch
         } else {
             this.isEraseMode = true;
-            this.isEraseModeLastUpdate = false;
             const pointer = canvas.getPointer(fEvent.e);
             this.pointerArray = [];
             this.pointerSearchIndex = 0;
@@ -248,11 +247,12 @@ class FreeDrawing extends Component {
      * @param {{target: fabric.Object, e: MouseEvent}} fEvent - Fabric event object
      * @private
      */
-    _onFabricMouseUp() {
+    _onFabricMouseUp(fEvent) {
         const canvas = this.getCanvas();
         if (this.isPencilMode) {
             //
         } else {
+            this.pointerArray.push(canvas.getPointer(fEvent.e));
             this.isEraseMode = false;
             canvas.off({
                 'mouse:move': this._listeners.mousemove,
