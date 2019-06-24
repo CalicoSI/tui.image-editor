@@ -49,6 +49,21 @@ class FreeDrawing extends Component {
             isTransparent: this._isTransparent.bind(this),
             startEraserMode: this._startEraserMode.bind(this)
         };
+
+        fabric.Canvas.prototype._onMouseDownInDrawingMode = function(e) {
+            // console.log('_onMouseDownInDrawingMode touch?:', e.touches);
+            if (e.touches && e.touches.length > 1) {
+                return;
+            }
+            this._isCurrentlyDrawing = true;
+            this.discardActiveObject(e).renderAll();
+            if (this.clipTo) {
+                fabric.util.clipContext(this, this.contextTop);
+            }
+            const pointer = this.getPointer(e);
+            this.freeDrawingBrush.onMouseDown(pointer);
+            this._handleEvent(e, 'down');
+        };
     }
 
     /**

@@ -13811,6 +13811,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	            isTransparent: _this._isTransparent.bind(_this),
 	            startEraserMode: _this._startEraserMode.bind(_this)
 	        };
+
+	        _fabric2.default.Canvas.prototype._onMouseDownInDrawingMode = function (e) {
+	            // console.log('_onMouseDownInDrawingMode touch?:', e.touches);
+	            if (e.touches && e.touches.length > 1) {
+	                return;
+	            }
+	            this._isCurrentlyDrawing = true;
+	            this.discardActiveObject(e).renderAll();
+	            if (this.clipTo) {
+	                _fabric2.default.util.clipContext(this, this.contextTop);
+	            }
+	            var pointer = this.getPointer(e);
+	            this.freeDrawingBrush.onMouseDown(pointer);
+	            this._handleEvent(e, 'down');
+	        };
 	        return _this;
 	    }
 
